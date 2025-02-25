@@ -1,33 +1,23 @@
 - hosts: ubuntu
   become: true
-  vars:
-    ansible_ssh_pass: "{{ ansible_password }}"
-    ansible_become_pass: "{{ ansible_password }}"
   tasks:
     - name: Update package lists
       apt:
         update_cache: yes
 
-    - name: Install required packages
+    - name: Upgrade installed packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+
+    - name: Install essential packages
       apt:
         name:
           - podman
           - ufw
           - curl
           - git
+          - htop
+          - vim
+          - python3-pip
         state: present
-
-    - name: Allow SSH through UFW
-      ufw:
-        rule: allow
-        port: "22"
-        proto: tcp
-
-    - name: Allow Home Assistant port through UFW
-      ufw:
-        rule: allow
-        port: "8123"
-        proto: tcp
-
-    - name: Enable UFW
-      shell: ufw --force enable
