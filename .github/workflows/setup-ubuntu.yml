@@ -12,10 +12,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Install Dependencies (sshpass)
+        run: sudo apt update && sudo apt install -y sshpass
+
       - name: Run Ansible Playbook
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD || '' }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/setup-ubuntu.yml \
           --extra-vars "ansible_user=$SSH_USER ansible_password=$SSH_PASSWORD"
