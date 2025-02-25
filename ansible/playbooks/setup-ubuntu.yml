@@ -1,0 +1,30 @@
+- hosts: ubuntu
+  become: true
+  tasks:
+    - name: Update package lists
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - podman
+          - ufw
+          - curl
+          - git
+        state: present
+
+    - name: Allow SSH through UFW
+      ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+
+    - name: Allow Home Assistant port through UFW
+      ufw:
+        rule: allow
+        port: "8123"
+        proto: tcp
+
+    - name: Enable UFW
+      shell: ufw --force enable
