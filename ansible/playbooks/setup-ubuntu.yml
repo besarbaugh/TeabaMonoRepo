@@ -1,0 +1,23 @@
+- hosts: ubuntu
+  become: true
+  tasks:
+    - name: Update package lists
+      apt:
+        update_cache: yes
+
+    - name: Upgrade installed packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+
+    - name: Install essential packages
+      apt:
+        name:
+          - podman
+          - ufw
+          - curl
+          - git
+          - htop
+          - vim
+          - python3-pip
+        state: present

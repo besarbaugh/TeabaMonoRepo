@@ -1,0 +1,22 @@
+name: Setup Ubuntu
+
+on:
+  push:
+    branches:
+      - main-build
+
+jobs:
+  setup-ubuntu:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y sshpass ansible
+
+      - name: Run Ansible Playbook
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/setup-ubuntu.yml
