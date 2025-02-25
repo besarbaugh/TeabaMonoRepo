@@ -3,7 +3,7 @@ name: Setup Ubuntu
 on:
   push:
     branches:
-      - main
+      - main-build
 
 jobs:
   setup-ubuntu:
