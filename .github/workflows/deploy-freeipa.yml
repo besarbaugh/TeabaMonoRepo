@@ -1,0 +1,38 @@
+name: Deploy FreeIPA Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # Uses your laptop's GitHub Runner
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible on GitHub Runner
+        run: sudo apt update && sudo apt install -y ansible
+
+      - name: Configure Ansible Inventory
+        run: |
+          mkdir -p ~/TeabaMonoRepo/ansible
+          cat <<EOF > ~/TeabaMonoRepo/ansible/inventories/production.yml
+          all:
+            hosts:
+              ubuntu-server:
+                ansible_host: ${{ secrets.WYSE_IP }}
+                ansible_user: teaba
+                ansible_ssh_pass: ${{ secrets.ANSIBLE_PASSWORD }}
+                ansible_become: yes
+                ansible_become_method: sudo
+          EOF
+
+      - name: Run FreeIPA Install Playbook
+        run: |
+          ansible-playbook -i ~/TeabaMonoRepo/ansible/inventories/production.yml ~/TeabaMonoRepo/ansible/playbooks/freeipa/server-setup.yml
+        env:
+          IPA_ADMIN_PASSWORD: ${{ secrets.IPA_ADMIN_PASSWORD }}
+          IPA_DS_PASSWORD: ${{ secrets.IPA_DS_PASSWORD }}
