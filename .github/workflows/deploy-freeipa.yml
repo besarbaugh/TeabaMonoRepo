@@ -10,29 +10,36 @@ jobs:
   deploy:
     runs-on: self-hosted  # Uses your laptop's GitHub Runner
     steps:
-      - name: Checkout Repository
+      - name: Checkout the Repository
         uses: actions/checkout@v4
+        with:
+          path: $GITHUB_WORKSPACE
+
 
       - name: Install Ansible on GitHub Runner
         run: sudo apt update && sudo apt install -y ansible
 
+      - name: Create SSH Private Key for Ansible
+        run: |
+          echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ~/.ssh/id_ansible
+          chmod 600 ~/.ssh/id_ansible
+
       - name: Configure Ansible Inventory
         run: |
-          mkdir -p ~/TeabaMonoRepo/ansible
-          cat <<EOF > ~/TeabaMonoRepo/ansible/inventories/production.yml
+          mkdir -p ~/$GITHUB_WORKSPACE/ansible
+          cat <<EOF > ~/$GITHUB_WORKSPACE/ansible/inventories/production.yml
           all:
             hosts:
               ubuntu-server:
                 ansible_host: ${{ secrets.WYSE_IP }}
                 ansible_user: teaba
-                ansible_ssh_pass: ${{ secrets.ANSIBLE_PASSWORD }}
+                ansible_ssh_private_key_file: ~/.ssh/id_ansible
                 ansible_become: yes
-                ansible_become_method: sudo
           EOF
 
       - name: Run FreeIPA Install Playbook
         run: |
-          ansible-playbook -i ~/TeabaMonoRepo/ansible/inventories/production.yml ~/TeabaMonoRepo/ansible/playbooks/freeipa/server-setup.yml
+          ansible-playbook -i ~/$GITHUB_WORKSPACE/ansible/inventories/production.yml ~/$GITHUB_WORKSPACE/ansible/playbooks/freeipa/server-setup.yml
         env:
           IPA_ADMIN_PASSWORD: ${{ secrets.IPA_ADMIN_PASSWORD }}
           IPA_DS_PASSWORD: ${{ secrets.IPA_DS_PASSWORD }}
