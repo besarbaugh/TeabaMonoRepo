@@ -3,7 +3,7 @@ name: Deploy FreeIPA Server
 on:
   push:
     branches:
-      - main
+      - main-build
   workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 jobs:
