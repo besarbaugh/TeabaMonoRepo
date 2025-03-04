@@ -41,6 +41,10 @@ jobs:
                 ansible_become: yes
           EOF
 
+      # ✅ Add the SSH test step before running Ansible
+      - name: Test SSH Connection
+        run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ansible teaba@${{ secrets.WYSE_IP }} "echo 'SSH Connection Successful'"
+
       - name: Run FreeIPA Install Playbook
         run: |
           ansible-playbook -i $GITHUB_WORKSPACE/ansible/inventories/production.yml $GITHUB_WORKSPACE/ansible/playbooks/freeipa/server-setup.yml

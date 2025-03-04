@@ -1,5 +1,5 @@
 - name: Install and Configure FreeIPA Server
-  hosts: ubuntu-server
+  hosts: 192.168.50.158  # <-- Change this to match the inventory file
   become: yes
   tasks:
     - name: Update package cache
