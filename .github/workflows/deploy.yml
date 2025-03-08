@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install Dependencies (Docker & OS Agent) on Remote Server
+      - name: Install Dependencies on Remote Server
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             sudo apt-get update && sudo apt-get upgrade -y
@@ -28,32 +28,38 @@ jobs:
               software-properties-common \
               udisks2 wget curl lvm2 sshpass libglib2.0-bin
 
+            # Install Docker only if not installed
             if ! command -v docker &> /dev/null; then
               curl -fsSL https://get.docker.com | sudo sh
               sudo usermod -aG docker $USER
             fi
 
+            # Install Docker Compose only if not installed
             if ! command -v docker-compose &> /dev/null; then
               sudo apt-get install -y docker-compose-plugin
             fi
+          EOF
 
+      - name: Ensure OS Agent is Installed
+        run: |
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! gdbus introspect --system --dest io.hass.os --object-path /io/hass/os &> /dev/null; then
               wget https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_1.7.2_linux_x86_64.deb
               sudo dpkg -i os-agent_1.7.2_linux_x86_64.deb
               rm os-agent_1.7.2_linux_x86_64.deb
             else
-              echo "OS Agent is already installed. Skipping..."
+              echo "✅ OS Agent is already installed. Skipping..."
             fi
           EOF
 
-      - name: Set Up LVM Storage for Home Assistant on Remote Server
+      - name: Set Up LVM Storage for Home Assistant
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! sudo lvs | grep -q homeassistant; then
               sudo lvcreate -L 20G -n homeassistant teaba-one-vg
               sudo mkfs.ext4 /dev/teaba-one-vg/homeassistant
             else
-              echo "LVM volume already exists. Skipping creation."
+              echo "✅ LVM volume already exists. Skipping creation."
             fi
 
             sudo mkdir -p /mnt/homeassistant
@@ -72,34 +78,49 @@ jobs:
             fi
           EOF
 
-      - name: Install Home Assistant Supervised on Remote Server
+      - name: Install Home Assistant Supervised
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! dpkg -l | grep -q homeassistant-supervised; then
               wget https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
               sudo dpkg -i homeassistant-supervised.deb
+              sudo apt-get install -f -y
               rm homeassistant-supervised.deb
             else
-              echo "Home Assistant Supervised is already installed. Skipping..."
+              echo "✅ Home Assistant Supervisor is already installed. Skipping..."
             fi
           EOF
 
-      - name: Configure Docker Network on Remote Server
+      - name: Configure Docker Network
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! docker network ls | grep -q home_net; then
               docker network create home_net
+            else
+              echo "✅ Docker network already exists. Skipping creation."
             fi
           EOF
 
-      - name: Restart Home Assistant Supervisor on Remote Server
+      - name: Restart Home Assistant Supervisor (Only If Running)
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST "sudo systemctl restart hassio-supervisor"
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+            if systemctl list-units --type=service | grep -q "hassio-supervisor"; then
+              sudo systemctl restart hassio-supervisor
+              echo "✅ Home Assistant Supervisor restarted."
+            else
+              echo "⚠️ Home Assistant Supervisor service not found. Attempting installation..."
+              wget https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
+              sudo dpkg -i homeassistant-supervised.deb
+              sudo apt-get install -f -y
+              rm homeassistant-supervised.deb
+              sudo systemctl restart hassio-supervisor
+            fi
+          EOF
 
       - name: Verify Deployment
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
-            if sudo systemctl is-active --quiet hassio-supervisor; then
+            if systemctl is-active --quiet hassio-supervisor; then
               echo "✅ Home Assistant Supervisor is running!"
             else
               echo "❌ Home Assistant Supervisor failed to start!" && exit 1
