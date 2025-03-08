@@ -31,7 +31,6 @@ jobs:
             export ansible_wyse_host="${{ secrets.ANSIBLE_WYSE_HOST }}"
             export ansible_wyse_user="${{ secrets.ANSIBLE_WYSE_USER }}"
             export ansible_wyse_password="${{ secrets.ANSIBLE_WYSE_PASSWORD }}"
-            export ansible_windows_host="${{ secrets.ANSIBLE_WINDOWS_HOST }}"
             export ansible_windows_user="${{ secrets.ANSIBLE_WINDOWS_USER }}"
             export ansible_windows_password="${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}"
             envsubst < inventory.ini.j2 > inventory.ini
