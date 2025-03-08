@@ -82,9 +82,16 @@ jobs:
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! dpkg -l | grep -q homeassistant-supervised; then
+              echo "🚀 Installing missing dependencies..."
+              sudo apt-get update && sudo apt-get install -y systemd-journal-remote
+
+              echo "📥 Downloading Home Assistant Supervised..."
               wget https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
-              sudo dpkg -i homeassistant-supervised.deb
-              sudo apt-get install -f -y
+
+              echo "📦 Installing Home Assistant Supervised..."
+              sudo dpkg -i homeassistant-supervised.deb || sudo apt-get install -f -y
+
+              echo "🧹 Cleaning up..."
               rm homeassistant-supervised.deb
             else
               echo "✅ Home Assistant Supervisor is already installed. Skipping..."
