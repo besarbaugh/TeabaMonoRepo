@@ -1,5 +1,5 @@
 [homeassistant]
-teaba-one ansible_host={{ ansible_wyse_host }} ansible_user={{ ansible_wyse_user }} ansible_password={{ ansible_wyse_password }} ansible_connection=ssh
+teaba-one ansible_host=$ansible_wyse_host ansible_user=$ansible_wyse_user ansible_password=$ansible_wyse_password ansible_connection=ssh
 
 [windows]
-win11 ansible_host={{ ansible_windows_host }} ansible_user={{ ansible_windows_user }} ansible_password={{ ansible_windows_password }} ansible_connection=winrm ansible_winrm_transport=basic ansible_winrm_server_cert_validation=ignore
+win11 ansible_host=$ansible_windows_host ansible_user=$ansible_windows_user ansible_password=$ansible_windows_password ansible_connection=winrm ansible_winrm_transport=basic ansible_winrm_server_cert_validation=ignore
