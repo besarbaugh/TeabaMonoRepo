@@ -29,17 +29,19 @@ jobs:
       - name: Create Ansible Inventory
         run: |
           echo "[homeassistant]" > inventory.ini
-          echo "teaba-one ansible_host=${{ secrets.ANSIBLE_WYSE_HOST }} ansible_user=${{ secrets.ANSIBLE_WYSE_USER }} ansible_password=$ANSIBLE_WYSE_PASSWORD" >> inventory.ini
+          echo "teaba-one ansible_host=${{ secrets.ANSIBLE_WYSE_HOST }} ansible_user=${{ secrets.ANSIBLE_WYSE_USER }} ansible_password=$ANSIBLE_WYSE_PASSWORD" >> ansible-home-automation/inventory.ini
           
-          echo "[windows]" >> inventory.ini
+          echo "[windows]" >> ansible-home-automation/inventory.ini
           echo "besar-laptop ansible_host=${{ secrets.ANSIBLE_WINDOWS_HOST }} ansible_user=${{ secrets.ANSIBLE_WINDOWS_USER }} ansible_password=$ANSIBLE_WINDOWS_PASSWORD ansible_connection=winrm ansible_winrm_transport=basic ansible_winrm_server_cert_validation=ignore" >> inventory.ini
 
       - name: Check Inventory Exists (No Logging)
-        run: ls -lah inventory.ini
+        run: ls -lah ansible-home-automation/inventory.ini
 
       - name: Deploy Configuration with Ansible
-        run: ansible-playbook -i inventory.ini playbooks/site.yml
+        run: |
+          cd ansible-home-automation
+          ansible-playbook -i inventory.ini playbooks/site.yml
 
       - name: Cleanup Inventory File
         if: always()
-        run: rm -f inventory.ini
+        run: rm -f ansible-home-automation/inventory.ini
