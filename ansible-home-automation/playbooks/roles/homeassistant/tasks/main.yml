@@ -1,2 +1,5 @@
-﻿- name: Placeholder for homeassistant tasks
-  tasks: []
+---
+# tasks/main.yml - homeassistant role
+- name: Placeholder for homeassistant tasks
+  debug:
+    msg: 'Executing homeassistant role'

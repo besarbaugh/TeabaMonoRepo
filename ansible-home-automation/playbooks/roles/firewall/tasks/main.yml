@@ -1,2 +1,5 @@
-﻿- name: Placeholder for firewall tasks
-  tasks: []
+---
+# tasks/main.yml - firewall role
+- name: Placeholder for firewall tasks
+  debug:
+    msg: 'Executing firewall role'
