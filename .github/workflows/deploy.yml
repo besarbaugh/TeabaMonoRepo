@@ -1,44 +1,38 @@
-name: Deploy Home Automation
+name: Ansible Deployment
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   ansible_deploy:
-    runs-on: self-hosted
-
+    runs-on: [self-hosted]  # Ensure this runs only on your self-hosted runner
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Mask Ansible Secrets
+      - name: Set up Python & Virtual Environment
         run: |
-          echo "::add-mask::${{ secrets.ANSIBLE_WYSE_PASSWORD }}"
-          echo "::add-mask::${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}"
+          python3 -m venv ~/.ansible-venv
+          source ~/.ansible-venv/bin/activate
+          pip install --upgrade pip
+          pip install ansible pywinrm requests
 
-      - name: Install Ansible and Python Dependencies
-        run: |
-          sudo apt update && sudo apt install -y ansible sshpass
-          pip install pywinrm requests
-
-      - name: Generate Inventory File from Jinja Template
+      - name: Configure Ansible Inventory
         run: |
           cd ansible-home-automation
           cat inventory.ini.j2 | envsubst > inventory.ini
+        env:
+          ansible_wyse_host: ${{ secrets.ANSIBLE_WYSE_HOST }}
+          ansible_wyse_user: ${{ secrets.ANSIBLE_WYSE_USER }}
+          ansible_wyse_password: ${{ secrets.ANSIBLE_WYSE_PASSWORD }}
+          ansible_windows_host: ${{ secrets.ANSIBLE_WINDOWS_HOST }}
+          ansible_windows_user: ${{ secrets.ANSIBLE_WINDOWS_USER }}
+          ansible_windows_password: ${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}
 
-      - name: Debug - Print Inventory File
-        run: cat ansible-home-automation/inventory.ini
-
-      - name: Test SSH Connectivity to Wyse
-        run: ssh -o StrictHostKeyChecking=no ${{ secrets.ANSIBLE_WYSE_USER }}@${{ secrets.ANSIBLE_WYSE_HOST }} "echo SSH Connection Successful" || exit 1
-
-      - name: Deploy Configuration with Ansible
+      - name: Run Ansible Playbook
         run: |
-          cd ansible-home-automation
-          ansible-playbook -i inventory.ini playbooks/site.yml
-
-      - name: Cleanup Inventory File
-        if: always()
-        run: rm -f ansible-home-automation/inventory.ini
+          source ~/.ansible-venv/bin/activate
+          ansible-playbook -i ansible-home-automation/inventory.ini ansible-home-automation/playbook.yml
