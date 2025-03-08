@@ -40,4 +40,4 @@ jobs:
       - name: Run Ansible Playbook
         run: |
           source ~/.ansible-venv/bin/activate
-          ansible-playbook -i ansible-home-automation/inventory.ini ansible-home-automation/playbook.yml
+          ansible-playbook -i ansible-home-automation/inventory.ini ansible-home-automation/playbooks/site.yml
