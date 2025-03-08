@@ -18,24 +18,18 @@ jobs:
           echo "::add-mask::${{ secrets.ANSIBLE_WYSE_PASSWORD }}"
           echo "::add-mask::${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}"
 
-      - name: Set Environment Variables
+      - name: Generate Inventory File from Template
         run: |
-          echo "ANSIBLE_WYSE_PASSWORD=${{ secrets.ANSIBLE_WYSE_PASSWORD }}" >> $GITHUB_ENV
-          echo "ANSIBLE_WINDOWS_PASSWORD=${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}" >> $GITHUB_ENV
+          cd ansible-home-automation
+          cat inventory.ini.j2 | sed "s/{{ ansible_wyse_host }}/${{ secrets.ANSIBLE_WYSE_HOST }}/g" \
+                               | sed "s/{{ ansible_wyse_user }}/${{ secrets.ANSIBLE_WYSE_USER }}/g" \
+                               | sed "s/{{ ansible_wyse_password }}/${{ secrets.ANSIBLE_WYSE_PASSWORD }}/g" \
+                               | sed "s/{{ ansible_windows_host }}/${{ secrets.ANSIBLE_WINDOWS_HOST }}/g" \
+                               | sed "s/{{ ansible_windows_user }}/${{ secrets.ANSIBLE_WINDOWS_USER }}/g" \
+                               | sed "s/{{ ansible_windows_password }}/${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}/g" > inventory.ini
 
-      - name: Setup Ansible
-        run: sudo apt update && sudo apt install -y ansible sshpass
-
-      - name: Create Ansible Inventory
-        run: |
-          echo "[homeassistant]" > inventory.ini
-          echo "teaba-one ansible_host=${{ secrets.ANSIBLE_WYSE_HOST }} ansible_user=${{ secrets.ANSIBLE_WYSE_USER }} ansible_password=$ANSIBLE_WYSE_PASSWORD" >> ansible-home-automation/inventory.ini
-          
-          echo "[windows]" >> ansible-home-automation/inventory.ini
-          echo "besar-laptop ansible_host=${{ secrets.ANSIBLE_WINDOWS_HOST }} ansible_user=${{ secrets.ANSIBLE_WINDOWS_USER }} ansible_password=$ANSIBLE_WINDOWS_PASSWORD ansible_connection=winrm ansible_winrm_transport=basic ansible_winrm_server_cert_validation=ignore" >> inventory.ini
-
-      - name: Check Inventory Exists (No Logging)
-        run: ls -lah ansible-home-automation/inventory.ini
+      - name: Debug - Print Inventory (Check if Generated Correctly)
+        run: cat ansible-home-automation/inventory.ini
 
       - name: Deploy Configuration with Ansible
         run: |
