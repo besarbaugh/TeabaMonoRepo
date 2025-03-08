@@ -1,2 +1,5 @@
-﻿- name: Placeholder for sonos_optimization tasks
-  tasks: []
+---
+# tasks/main.yml - sonos_optimization role
+- name: Placeholder for sonos_optimization tasks
+  debug:
+    msg: 'Executing sonos_optimization role'

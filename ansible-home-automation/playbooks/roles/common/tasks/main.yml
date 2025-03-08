@@ -1,2 +1,5 @@
-﻿- name: Placeholder for common tasks
-  tasks: []
+---
+# tasks/main.yml - common role
+- name: Placeholder for common tasks
+  debug:
+    msg: 'Executing common role'

@@ -1,2 +1,5 @@
-﻿- name: Placeholder for updates tasks
-  tasks: []
+---
+# tasks/main.yml - updates role
+- name: Placeholder for updates tasks
+  debug:
+    msg: 'Executing updates role'
