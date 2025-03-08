@@ -1,0 +1,9 @@
+- name: Configure Home Assistant host and Windows workstation
+  hosts: all
+  become: true
+  roles:
+    - common            # General setup (like setting up users or common packages)
+    - homeassistant     # Configure Home Assistant on Wyse 5070
+    - firewall          # Secure networking (UFW on Linux, Windows Firewall rules)
+    - updates           # Apply OS updates for Wyse and Windows
+    - sonos_optimization  # Optimize Sonos settings for low-latency TTS
