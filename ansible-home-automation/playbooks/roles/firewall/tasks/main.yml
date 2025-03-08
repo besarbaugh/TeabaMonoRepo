@@ -1,4 +1,3 @@
----
 - name: Allow Sonos Controller Discovery
   ansible.windows.win_firewall_rule:
     name: "Allow Sonos Discovery"
