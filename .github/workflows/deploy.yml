@@ -13,14 +13,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Python dependencies for Windows
-        run: pip install pywinrm
-
-
       - name: Mask Ansible Secrets
         run: |
           echo "::add-mask::${{ secrets.ANSIBLE_WYSE_PASSWORD }}"
           echo "::add-mask::${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}"
+
+      - name: Install Ansible and WinRM Dependency
+        run: |
+          sudo apt update && sudo apt install -y ansible sshpass
+          pip install pywinrm
 
       - name: Generate Inventory File from Template
         run: |
@@ -32,8 +33,14 @@ jobs:
                                | sed "s/{{ ansible_windows_user }}/${{ secrets.ANSIBLE_WINDOWS_USER }}/g" \
                                | sed "s/{{ ansible_windows_password }}/${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}/g" > inventory.ini
 
-      - name: Debug - Print Inventory (Check if Generated Correctly)
+      - name: Debug - Print Inventory (Check If Generated Correctly)
         run: cat ansible-home-automation/inventory.ini
+
+      - name: Verify Connectivity to Hosts
+        run: |
+          ping -c 3 ${{ secrets.ANSIBLE_WYSE_HOST }} || true
+          nslookup ${{ secrets.ANSIBLE_WYSE_HOST }} || true
+          ssh -o StrictHostKeyChecking=no ${{ secrets.ANSIBLE_WYSE_USER }}@${{ secrets.ANSIBLE_WYSE_HOST }} "echo SSH Test Successful" || true
 
       - name: Deploy Configuration with Ansible
         run: |
