@@ -33,6 +33,7 @@ jobs:
             export ansible_wyse_password="${{ secrets.ANSIBLE_WYSE_PASSWORD }}"
             export ansible_windows_user="${{ secrets.ANSIBLE_WINDOWS_USER }}"
             export ansible_windows_password="${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}"
+            export ansible_windows_host="${{ secrets.ANSIBLE_WINDOWS_HOST }}"
             envsubst < inventory.ini.j2 > inventory.ini
             cat inventory.ini  # Verify contents
 
