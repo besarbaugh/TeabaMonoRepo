@@ -1,8 +1,0 @@
-all:
-  hosts:
-    ubuntu-server:
-      ansible_host: 192.168.50.158
-      ansible_user: teaba
-      ansible_ssh_pass: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"  # Will be set in GH Secrets
-      ansible_become: yes
-      ansible_become_method: sudo

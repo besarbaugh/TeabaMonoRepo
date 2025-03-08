@@ -1,0 +1,5 @@
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.0/24  # Example Docker subnet of proxy/Add-ons
+    - 192.168.1.100   # Example IP of proxy if on host network
