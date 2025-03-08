@@ -13,6 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Python dependencies for Windows
+        run: pip install pywinrm
+
+
       - name: Mask Ansible Secrets
         run: |
           echo "::add-mask::${{ secrets.ANSIBLE_WYSE_PASSWORD }}"
