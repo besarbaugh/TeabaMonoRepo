@@ -1,61 +1,65 @@
-- name: Configure Firewall on Home Assistant host
-  hosts: homeassistant
-  become: true
-  tasks:
-    - name: Ensure UFW is installed
-      ansible.builtin.apt:
-        name: ufw
-        state: present
+---
+- name: Allow Sonos Controller Discovery
+  ansible.windows.win_firewall_rule:
+    name: "Allow Sonos Discovery"
+    direction: in
+    action: allow
+    protocol: UDP
+    localport: 1900
+    enable: yes
+    group: "Sonos"
 
-    - name: Allow SSH from LAN
-      community.general.ufw:
-        rule: allow
-        name: "Allow SSH"
-        port: 22
-        proto: tcp
-        src: 192.168.50.0/24   # Adjust to your local subnet
-
-    - name: Allow Home Assistant UI from LAN
-      community.general.ufw:
-        rule: allow
-        port: 8123
-        proto: tcp
-        src: 192.168.50.0/24   # Restrict access to internal network only
-
-    - name: Enable UFW (default deny incoming)
-      community.general.ufw:
-        state: enabled
-        policy: deny
+- name: Allow Sonos Streaming (1400)
+  ansible.windows.win_firewall_rule:
+    name: "Allow Sonos Streaming"
+    direction: in
+    action: allow
+    protocol: TCP
+    localport: 1400
+    enable: yes
+    group: "Sonos"
 
 
-- name: Configure Windows Firewall
-  hosts: windows
-  tasks:
-    - name: Allow WinRM for Ansible
-      community.windows.win_firewall_rule:
-        name: "Allow WinRM"
-        localport: 5985
-        protocol: tcp
-        direction: in
-        action: allow
-        profile: private
-        state: present
+- name: Allow MQTT Communication (1883)
+  ansible.windows.win_firewall_rule:
+    name: "Allow MQTT"
+    direction: in
+    action: allow
+    protocol: TCP
+    localport: 1883
+    enable: yes
+    group: "IoT"
 
-    - name: Allow RDP from local subnet (if needed)
-      community.windows.win_firewall_rule:
-        name: "Allow RDP"
-        localport: 3389
-        protocol: tcp
-        direction: in
-        action: allow
-        profile: private
-        remoteip: 192.168.50.0/24
-        state: present
+- name: Allow Zigbee2MQTT Communication (8883)
+  ansible.windows.win_firewall_rule:
+    name: "Allow Zigbee2MQTT"
+    direction: in
+    action: allow
+    protocol: TCP
+    localport: 8883
+    enable: yes
+    group: "IoT"
 
-    - name: Block all other inbound traffic on Private network
-      community.windows.win_firewall_rule:
-        name: "Block Unwanted Traffic"
-        direction: in
-        action: block
-        profile: private
-        state: present
+- name: Block all incoming traffic except local network (192.168.50.0/24)
+  ansible.windows.win_firewall_rule:
+    name: "Block External Access"
+    direction: in
+    action: block
+    remoteip: "0.0.0.0-192.168.50.0/24"
+    enable: yes
+    group: "Security"
+
+
+- name: Allow all outgoing traffic
+  ansible.windows.win_firewall_rule:
+    name: "Allow All Outgoing"
+    direction: out
+    action: allow
+    enable: yes
+    group: "Security"
+
+- name: Restart Windows Firewall
+  ansible.windows.win_service:
+    name: "mpssvc"
+    state: restarted
+
