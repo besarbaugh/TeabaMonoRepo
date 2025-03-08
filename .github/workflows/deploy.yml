@@ -18,29 +18,21 @@ jobs:
           echo "::add-mask::${{ secrets.ANSIBLE_WYSE_PASSWORD }}"
           echo "::add-mask::${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}"
 
-      - name: Install Ansible and WinRM Dependency
+      - name: Install Ansible and Python Dependencies
         run: |
           sudo apt update && sudo apt install -y ansible sshpass
-          pip install pywinrm
+          pip install pywinrm requests
 
-      - name: Generate Inventory File from Template
+      - name: Generate Inventory File from Jinja Template
         run: |
           cd ansible-home-automation
-          cat inventory.ini.j2 | sed "s/{{ ansible_wyse_host }}/${{ secrets.ANSIBLE_WYSE_HOST }}/g" \
-                               | sed "s/{{ ansible_wyse_user }}/${{ secrets.ANSIBLE_WYSE_USER }}/g" \
-                               | sed "s/{{ ansible_wyse_password }}/${{ secrets.ANSIBLE_WYSE_PASSWORD }}/g" \
-                               | sed "s/{{ ansible_windows_host }}/${{ secrets.ANSIBLE_WINDOWS_HOST }}/g" \
-                               | sed "s/{{ ansible_windows_user }}/${{ secrets.ANSIBLE_WINDOWS_USER }}/g" \
-                               | sed "s/{{ ansible_windows_password }}/${{ secrets.ANSIBLE_WINDOWS_PASSWORD }}/g" > inventory.ini
+          cat inventory.ini.j2 | envsubst > inventory.ini
 
-      - name: Debug - Print Inventory (Check If Generated Correctly)
+      - name: Debug - Print Inventory File
         run: cat ansible-home-automation/inventory.ini
 
-      - name: Verify Connectivity to Hosts
-        run: |
-          ping -c 3 ${{ secrets.ANSIBLE_WYSE_HOST }} || true
-          nslookup ${{ secrets.ANSIBLE_WYSE_HOST }} || true
-          ssh -o StrictHostKeyChecking=no ${{ secrets.ANSIBLE_WYSE_USER }}@${{ secrets.ANSIBLE_WYSE_HOST }} "echo SSH Test Successful" || true
+      - name: Test SSH Connectivity to Wyse
+        run: ssh -o StrictHostKeyChecking=no ${{ secrets.ANSIBLE_WYSE_USER }}@${{ secrets.ANSIBLE_WYSE_HOST }} "echo SSH Connection Successful" || exit 1
 
       - name: Deploy Configuration with Ansible
         run: |
