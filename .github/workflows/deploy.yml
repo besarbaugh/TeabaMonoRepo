@@ -12,27 +12,21 @@ jobs:
     env:
       HA_USER: ${{ secrets.HA_USER }}
       HA_HOST: ${{ secrets.HA_HOST }}
-    
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup SSH Key
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > private_key
-          chmod 600 private_key
-          ls -lah private_key  # Debug: Ensure the file is created
-
-
       - name: Install Dependencies (Docker & OS Agent) on Remote Server
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             sudo apt-get update && sudo apt-get upgrade -y
             sudo apt-get install -y \
               apparmor-utils avahi-daemon \
               dbus jq network-manager \
               software-properties-common \
-              udisks2 wget curl lvm2
+              udisks2 wget curl lvm2 sshpass
 
             if ! command -v docker &> /dev/null; then
               curl -fsSL https://get.docker.com | sudo sh
@@ -52,7 +46,7 @@ jobs:
 
       - name: Set Up LVM Storage for Home Assistant on Remote Server
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! sudo lvs | grep -q homeassistant; then
               sudo lvcreate -L 20G -n homeassistant teaba-one-vg
               sudo mkfs.ext4 /dev/teaba-one-vg/homeassistant
@@ -78,7 +72,7 @@ jobs:
 
       - name: Install Home Assistant Supervised on Remote Server
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! dpkg -l | grep -q homeassistant-supervised; then
               wget https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
               sudo dpkg -i homeassistant-supervised.deb
@@ -90,7 +84,7 @@ jobs:
 
       - name: Configure Docker Network on Remote Server
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if ! docker network ls | grep -q home_net; then
               docker network create home_net
             fi
@@ -98,17 +92,14 @@ jobs:
 
       - name: Restart Home Assistant Supervisor on Remote Server
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST "sudo systemctl restart hassio-supervisor"
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST "sudo systemctl restart hassio-supervisor"
 
       - name: Verify Deployment
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
             if sudo systemctl is-active --quiet hassio-supervisor; then
               echo "✅ Home Assistant Supervisor is running!"
             else
               echo "❌ Home Assistant Supervisor failed to start!" && exit 1
             fi
           EOF
-
-      - name: Cleanup SSH Key
-        run: rm private_key
