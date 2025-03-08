@@ -1,0 +1,112 @@
+name: Deploy Home Assistant Supervised
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # Runs on your Debian 12 Wyse Thin Client
+    env:
+      HA_USER: ${{ secrets.HA_USER }}
+      HA_HOST: ${{ secrets.HA_HOST }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+
+      - name: Install Dependencies (Docker & OS Agent) on Remote Server
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+            sudo apt-get update && sudo apt-get upgrade -y
+            sudo apt-get install -y \
+              apparmor-utils avahi-daemon \
+              dbus jq network-manager \
+              software-properties-common \
+              udisks2 wget curl lvm2
+
+            if ! command -v docker &> /dev/null; then
+              curl -fsSL https://get.docker.com | sudo sh
+              sudo usermod -aG docker $USER
+            fi
+
+            if ! command -v docker-compose &> /dev/null; then
+              sudo apt-get install -y docker-compose-plugin
+            fi
+
+            if ! systemctl list-units --full -all | grep -Fq "haos-agent.service"; then
+              wget https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_amd64.deb
+              sudo dpkg -i os-agent_amd64.deb
+              rm os-agent_amd64.deb
+            fi
+          EOF
+
+      - name: Set Up LVM Storage for Home Assistant on Remote Server
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+            if ! sudo lvs | grep -q homeassistant; then
+              sudo lvcreate -L 20G -n homeassistant teaba-one-vg
+              sudo mkfs.ext4 /dev/teaba-one-vg/homeassistant
+            else
+              echo "LVM volume already exists. Skipping creation."
+            fi
+
+            sudo mkdir -p /mnt/homeassistant
+
+            if ! grep -qs '/mnt/homeassistant' /etc/fstab; then
+              echo "/dev/teaba-one-vg/homeassistant /mnt/homeassistant ext4 defaults 0 2" | sudo tee -a /etc/fstab
+            fi
+
+            if ! mount | grep -q '/mnt/homeassistant'; then
+              sudo mount -a
+            fi
+
+            if [ ! -L /var/lib/homeassistant ]; then
+              sudo mv /var/lib/homeassistant /mnt/homeassistant
+              sudo ln -s /mnt/homeassistant /var/lib/homeassistant
+            fi
+          EOF
+
+      - name: Install Home Assistant Supervised on Remote Server
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+            if ! dpkg -l | grep -q homeassistant-supervised; then
+              wget https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb
+              sudo dpkg -i homeassistant-supervised.deb
+              rm homeassistant-supervised.deb
+            else
+              echo "Home Assistant Supervised already installed. Skipping..."
+            fi
+          EOF
+
+      - name: Configure Docker Network on Remote Server
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+            if ! docker network ls | grep -q home_net; then
+              docker network create home_net
+            fi
+          EOF
+
+      - name: Restart Home Assistant Supervisor on Remote Server
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST "sudo systemctl restart hassio-supervisor"
+
+      - name: Verify Deployment
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no $HA_USER@$HA_HOST << 'EOF'
+            if sudo systemctl is-active --quiet hassio-supervisor; then
+              echo "✅ Home Assistant Supervisor is running!"
+            else
+              echo "❌ Home Assistant Supervisor failed to start!" && exit 1
+            fi
+          EOF
+
+      - name: Cleanup SSH Key
+        run: rm private_key
