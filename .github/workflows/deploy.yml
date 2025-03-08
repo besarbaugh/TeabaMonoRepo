@@ -26,7 +26,7 @@ jobs:
               apparmor-utils avahi-daemon \
               dbus jq network-manager \
               software-properties-common \
-              udisks2 wget curl lvm2 sshpass
+              udisks2 wget curl lvm2 sshpass libglib2.0-bin
 
             if ! command -v docker &> /dev/null; then
               curl -fsSL https://get.docker.com | sudo sh
@@ -37,10 +37,12 @@ jobs:
               sudo apt-get install -y docker-compose-plugin
             fi
 
-            if ! systemctl list-units --full -all | grep -Fq "haos-agent.service"; then
-              wget https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_amd64.deb
-              sudo dpkg -i os-agent_amd64.deb
-              rm os-agent_amd64.deb
+            if ! gdbus introspect --system --dest io.hass.os --object-path /io/hass/os &> /dev/null; then
+              wget https://github.com/home-assistant/os-agent/releases/latest/download/os-agent_1.7.2_linux_x86_64.deb
+              sudo dpkg -i os-agent_1.7.2_linux_x86_64.deb
+              rm os-agent_1.7.2_linux_x86_64.deb
+            else
+              echo "OS Agent is already installed. Skipping..."
             fi
           EOF
 
@@ -78,7 +80,7 @@ jobs:
               sudo dpkg -i homeassistant-supervised.deb
               rm homeassistant-supervised.deb
             else
-              echo "Home Assistant Supervised already installed. Skipping..."
+              echo "Home Assistant Supervised is already installed. Skipping..."
             fi
           EOF
 
