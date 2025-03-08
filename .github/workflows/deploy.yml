@@ -8,10 +8,15 @@ on:
 
 jobs:
   ansible_deploy:
-    runs-on: [self-hosted]  # Ensure this runs only on your self-hosted runner
+    runs-on: [self-hosted, besar]  # Ensure this runs only on your self-hosted runner
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Ensure Python Virtual Environment Support
+        run: |
+          sudo apt update
+          sudo apt install -y python3-venv python3-pip
 
       - name: Set up Python & Virtual Environment
         run: |
