@@ -1,3 +1,40 @@
 inventory.ini
 
+# Python virtual environment
+.venv/
+venv/
+ENV/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Ansible specific
+*.retry
+.ansible/
+ansible.log
+*.cache
+
+# IDE specific
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Environment variables
+.env
+*.env
+
+# Operating System
+.DS_Store
+Thumbs.db
+
 
