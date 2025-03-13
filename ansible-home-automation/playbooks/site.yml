@@ -1,14 +1,12 @@
 ---
+- name: Configure Windows workstation
+  hosts: windows
+  roles:
+    - firewall
+
 - name: Configure Home Assistant host
   hosts: homeassistant
   roles:
     - common
     - homeassistant
     - updates
-
-- name: Configure Windows workstation
-  hosts: windows  # Note: matches inventory group name
-  roles:
-    - common
-    - firewall
-    - sonos_optimization
