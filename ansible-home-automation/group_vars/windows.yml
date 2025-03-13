@@ -1,0 +1,48 @@
+---
+ansible_connection: winrm
+ansible_winrm_server_cert_validation: ignore
+ansible_winrm_transport: ntlm
+ansible_port: 5985
+
+# Windows Defender Firewall settings
+windows_firewall_state: enabled
+windows_firewall_profiles:
+  - name: Domain
+    state: enabled
+    default_inbound_action: block
+    default_outbound_action: allow
+  - name: Private
+    state: enabled
+    default_inbound_action: block
+    default_outbound_action: allow
+  - name: Public
+    state: enabled
+    default_inbound_action: block
+    default_outbound_action: allow
+
+# Allowed ports configuration
+firewall_allowed_ports:
+  - port: 1900
+    protocol: UDP
+    name: "Sonos Discovery"
+    group: "Sonos"
+  - port: 1400
+    protocol: TCP
+    name: "Sonos Streaming"
+    group: "Sonos"
+  - port: 1883
+    protocol: TCP
+    name: "MQTT"
+    group: "IoT"
+  - port: 8883
+    protocol: TCP
+    name: "Zigbee2MQTT"
+    group: "IoT"
+  - port: 8123
+    protocol: TCP
+    name: "Home Assistant"
+    group: "Home Assistant"
+  - port: 5985
+    protocol: TCP
+    name: "WinRM HTTP"
+    group: "Management"
