@@ -1,8 +1,14 @@
-- name: Configure Home Assistant host and Windows workstation
-  hosts: all
+---
+- name: Configure Home Assistant host
+  hosts: homeassistant
   roles:
     - common
     - homeassistant
-    - firewall
     - updates
+
+- name: Configure Windows workstation
+  hosts: windows
+  roles:
+    - common
+    - firewall
     - sonos_optimization

@@ -1,0 +1,5 @@
+---
+- hosts: windows_hosts
+  name: Configure Windows Firewall
+  roles:
+    - firewall
