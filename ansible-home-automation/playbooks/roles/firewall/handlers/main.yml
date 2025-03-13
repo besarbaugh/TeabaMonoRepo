@@ -1,0 +1,6 @@
+---
+- name: Restart Windows Firewall
+  ansible.windows.win_service:
+    name: "mpssvc"
+    state: restarted
+  when: firewall_installed.changed

@@ -7,7 +7,7 @@
     - updates
 
 - name: Configure Windows workstation
-  hosts: windows
+  hosts: windows  # Note: matches inventory group name
   roles:
     - common
     - firewall
