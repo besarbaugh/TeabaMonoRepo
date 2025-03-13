@@ -1,121 +1,120 @@
 ---
-- name: Configure Windows Firewall Rules
-  hosts: windows
-  become: yes
+- hosts: windows_hosts
+  name: Configure Windows Firewall
   tasks:
-  - name: Ensure Windows Defender Firewall is Installed
-    ansible.windows.win_feature:
-      name: "Windows-Defender-Features"
-      state: present
-      restart: yes
-    register: firewall_installed
+    - name: Ensure Windows Defender Firewall is Installed
+      ansible.windows.win_feature:
+        name: "Windows-Defender-Features"
+        state: present
+        restart: yes
+      register: firewall_installed
 
-  - name: Allow Sonos Controller Discovery
-    ansible.windows.win_firewall_rule:
-      name: "Allow Sonos Discovery"
-      direction: in
-      action: allow
-      protocol: UDP
-      localport: 1900
-      enable: yes
-      group: "Sonos"
-    notify: Restart Windows Firewall
+    - name: Allow Sonos Controller Discovery
+      ansible.windows.win_firewall_rule:
+        name: "Allow Sonos Discovery"
+        direction: in
+        action: allow
+        protocol: UDP
+        localport: 1900
+        enable: yes
+        group: "Sonos"
+      notify: Restart Windows Firewall
 
-  - name: Allow Sonos Streaming (1400)
-    ansible.windows.win_firewall_rule:
-      name: "Allow Sonos Streaming"
-      direction: in
-      action: allow
-      protocol: TCP
-      localport: 1400
-      enable: yes
-      group: "Sonos"
-    notify: Restart Windows Firewall
+    - name: Allow Sonos Streaming (1400)
+      ansible.windows.win_firewall_rule:
+        name: "Allow Sonos Streaming"
+        direction: in
+        action: allow
+        protocol: TCP
+        localport: 1400
+        enable: yes
+        group: "Sonos"
+      notify: Restart Windows Firewall
 
-  - name: Allow MQTT Communication (1883)
-    ansible.windows.win_firewall_rule:
-      name: "Allow MQTT"
-      direction: in
-      action: allow
-      protocol: TCP
-      localport: 1883
-      enable: yes
-      group: "IoT"
-    notify: Restart Windows Firewall
+    - name: Allow MQTT Communication (1883)
+      ansible.windows.win_firewall_rule:
+        name: "Allow MQTT"
+        direction: in
+        action: allow
+        protocol: TCP
+        localport: 1883
+        enable: yes
+        group: "IoT"
+      notify: Restart Windows Firewall
 
-  - name: Allow Zigbee2MQTT Communication (8883)
-    ansible.windows.win_firewall_rule:
-      name: "Allow Zigbee2MQTT"
-      direction: in
-      action: allow
-      protocol: TCP
-      localport: 8883
-      enable: yes
-      group: "IoT"
-    notify: Restart Windows Firewall
+    - name: Allow Zigbee2MQTT Communication (8883)
+      ansible.windows.win_firewall_rule:
+        name: "Allow Zigbee2MQTT"
+        direction: in
+        action: allow
+        protocol: TCP
+        localport: 8883
+        enable: yes
+        group: "IoT"
+      notify: Restart Windows Firewall
 
-  - name: Allow Home Assistant Web UI (8123)
-    ansible.windows.win_firewall_rule:
-      name: "Allow Home Assistant Web"
-      direction: in
-      action: allow
-      protocol: TCP
-      localport: 8123
-      enable: yes
-      group: "Home Assistant"
-    notify: Restart Windows Firewall
+    - name: Allow Home Assistant Web UI (8123)
+      ansible.windows.win_firewall_rule:
+        name: "Allow Home Assistant Web"
+        direction: in
+        action: allow
+        protocol: TCP
+        localport: 8123
+        enable: yes
+        group: "Home Assistant"
+      notify: Restart Windows Firewall
 
-  - name: Allow WinRM HTTP (5985)
-    ansible.windows.win_firewall_rule:
-      name: "Allow WinRM HTTP"
-      direction: in
-      action: allow
-      protocol: TCP
-      localport: 5985
-      enable: yes
-      group: "Management"
-    notify: Restart Windows Firewall
+    - name: Allow WinRM HTTP (5985)
+      ansible.windows.win_firewall_rule:
+        name: "Allow WinRM HTTP"
+        direction: in
+        action: allow
+        protocol: TCP
+        localport: 5985
+        enable: yes
+        group: "Management"
+      notify: Restart Windows Firewall
 
-  - name: Allow WinRM HTTPS (5986)
-    ansible.windows.win_firewall_rule:
-      name: "Allow WinRM HTTPS"
-      direction: in
-      action: allow
-      protocol: TCP
-      localport: 5986
-      enable: yes
-      group: "Management"
-    notify: Restart Windows Firewall
+    - name: Allow WinRM HTTPS (5986)
+      ansible.windows.win_firewall_rule:
+        name: "Allow WinRM HTTPS"
+        direction: in
+        action: allow
+        protocol: TCP
+        localport: 5986
+        enable: yes
+        group: "Management"
+      notify: Restart Windows Firewall
 
-  - name: Allow Multicast SSDP Discovery (Sonos, IoT)
-    ansible.windows.win_firewall_rule:
-      name: "Allow SSDP Discovery"
-      direction: in
-      action: allow
-      protocol: UDP
-      localport: 1900
-      remoteip: "239.255.255.250"
-      enable: yes
-      group: "IoT Discovery"
-    notify: Restart Windows Firewall
+    - name: Allow Multicast SSDP Discovery (Sonos, IoT)
+      ansible.windows.win_firewall_rule:
+        name: "Allow SSDP Discovery"
+        direction: in
+        action: allow
+        protocol: UDP
+        localport: 1900
+        remoteip: "239.255.255.250"
+        enable: yes
+        group: "IoT Discovery"
+      notify: Restart Windows Firewall
 
-  - name: Block all incoming traffic except local network (192.168.50.0/24)
-    ansible.windows.win_firewall_rule:
-      name: "Block External Access"
-      direction: in
-      action: block
-      remoteip: "0.0.0.0-192.168.50.0/24"
-      enable: yes
-      group: "Security"
-    notify: Restart Windows Firewall
+    - name: Block all incoming traffic except local network (192.168.50.0/24)
+      ansible.windows.win_firewall_rule:
+        name: "Block External Access"
+        direction: in
+        action: block
+        remoteip: "0.0.0.0-192.168.50.0/24"
+        enable: yes
+        group: "Security"
+      notify: Restart Windows Firewall
 
-  - name: Allow all outgoing traffic
-    ansible.windows.win_firewall_rule:
-      name: "Allow All Outgoing"
-      direction: out
-      action: allow
-      enable: yes
-      group: "Security"
+    - name: Allow all outgoing traffic
+      ansible.windows.win_firewall_rule:
+        name: "Allow All Outgoing"
+        direction: out
+        action: allow
+        enable: yes
+        group: "Security"
 
   handlers:
     - name: Restart Windows Firewall
