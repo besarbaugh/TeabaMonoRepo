@@ -1,97 +1,55 @@
-# RBAC Assignment Validation Rules
+JIRA-001: Inventory Existing Identity & Infra Artifacts Across All Tenants
+Points: 2
+Title: Inventory and document app registrations, service accounts, vaults, and file shares
+Description:
+Audit and document the resources related to custom RBAC and statefile storage left behind by the laid-off engineer across all three tenants (dev, QA, prod), including:
 
-This document outlines the validation logic required for role assignment requests in the `access-api` project.
+App registrations in Azure AD (per tenant)
 
----
+On-prem service accounts (proid accounts for dev/qa/prod)
 
-## 🎯 Goal
+Vault references (SCV or other, if any exist)
 
-Only allow valid Azure role assignments based on organizational policies involving:
-- Role restrictions
-- Caller and assignee validation via CSA or tags
-- Cross-tenant and environment alignment
-- Resource group metadata
-- TAM policy integration (stubbed)
+Network file shares used for Terraform state
 
----
+Acceptance Criteria:
 
-## ✅ Identity Definitions
+A confluence or markdown document exists listing all discovered:
 
-- **Caller SPN**: The service principal making the API call (via bearer token)
-- **Assignee SPN**: The identity receiving access (Enterprise App or Managed Identity)
-- **Target Resource Group**: The Azure resource group where access is being granted
-- **CSA**: Custom Security Attribute on Enterprise Apps
-- **MI**: Managed Identity
-- **Environment**: One of ["dev", "qa", "prod"]
-- **EONID**: Enterprise identifier (e.g. 12345)
+Azure app registrations
 
----
+On-prem proid service accounts
 
-## 🔐 Token-Level Validation
+Secrets vaults or SCV entries
 
-- Ensure JWT is present
-- Ensure `aud` claim matches the self-service app client ID
-- Ensure `iss` claim is from a known Entra issuer (e.g., starts with `https://sts.windows.net/`)
+File share locations (e.g., \\smb\terraform\state)
 
----
+Unknowns or missing resources are clearly marked with next steps or assumptions
 
-## ✅ Step-by-Step Validation
+JIRA-002: Initialize GitHub Repo & Store Secrets
+Points: 1
+Title: Clone existing RBAC repo and bootstrap new GitHub repo with secrets
+Description:
+Set up a new GitHub repository for the RBAC controller work by cloning the prior implementation, and initialize GitHub Actions with needed secrets.
 
-### Step 1: Extract Tags
+Acceptance Criteria:
 
-For the target resource group:
-- Look for any of these keys:
-  - Environment: `["sec_tam_environment", "env", "environment"]`
-  - EONID: `["eonid", "EONID", "inv_eon_id"]`
+New GitHub repo is created and contains the cloned RBAC repo contents
 
-For the assignee:
-- If it's an Enterprise App:
-  - Pull `environment` and `eonid` from CSA
-- If it's a Managed Identity:
-  - Pull `environment` from the tags on the resource group it's deployed in
+GitHub Actions secrets MSDEV_APP_SECRET, MSADQA_APP_SECRET are added
 
-### Step 2: Validate Role
+README updated with high-level setup instructions
 
-- Reject the request if the role is not in the hardcoded `APPROVED_ROLES` list
+JIRA-003: Test Custom Role Creation via Terraform and Plan for Pipeline
+Points: 2
+Title: Use msadqa app registration to create a custom read-only RBAC role in Terraform
+Description:
+Use the existing msadqa app registration to deploy a test custom role definition in the QA tenant using Terraform. Document any issues faced and consider what pipeline-based deployment would require (very high level).
 
-### Step 3: Validate Caller
+Acceptance Criteria:
 
-- Caller must be an Enterprise App with CSA
-- Caller `environment` must match the target RG environment tag
-- Caller `eonid` must match the target RG EONID tag
+Attempted deployment of a custom read-only role using TF and msadqa app
 
-### Step 4: Validate Assignee
+Challenges, permissions issues, or gaps documented in a shared notes file
 
-- If Assignee is an Enterprise App:
-  - Assignee `environment` must match target RG environment
-  - Assignee `eonid` is **not required**
-- If Assignee is a Managed Identity:
-  - Its associated resource group's `environment` tag must match the target RG
-
----
-
-## ❌ Failure Examples
-
-| Caller EONID | Caller Env | Assignee Env | Target RG Env | Target RG EONID | Outcome      | Reason                                           |
-|--------------|------------|--------------|----------------|------------------|--------------|--------------------------------------------------|
-| 12345        | prod       | dev          | prod           | 12345            | ❌            | Assignee env mismatch                            |
-| 98765        | prod       | prod         | prod           | 12345            | ❌            | Caller EONID mismatch                            |
-
----
-
-## ✅ Example Success
-
-| Caller EONID | Caller Env | Assignee Env | Target RG Env | Target RG EONID | Outcome      |
-|--------------|------------|--------------|----------------|------------------|--------------|
-| 12345        | prod       | prod         | prod           | 12345            | ✅ Permitted |
-
----
-
-## 📌 Future Considerations
-
-- Formalize tag normalization layer
-- Real-time call to TAM to validate complex cross-env conditions
-- Human access with audit logging
-- Expiring access and self-revocation
-
----
+High-level notes on what a CI/CD pipeline (e.g., GitHub Actions) would need to handle this reliably
